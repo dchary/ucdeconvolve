@@ -3,10 +3,8 @@
 # # Contact: daniel.charytonowicz@icahn.mssm.edu
 # ###################################################################################################
 
-"""UniCell Deconvolve - Cell Type Deconvolution For Transcriptomic Data."""
+import bz2, pickle, os
 
-# Load metadata for package
-from ._metadata import __version__, __author__, __email__
-from ._metadata import __date__, __institution__, __laboratory__
-
-from . import _tools as tl
+# Load metadata files
+with bz2.BZ2File(os.path.join(os.path.dirname(__file__), "data/metadata.pkl"), 'rb') as f:
+    metadata = pickle.load(f)
