@@ -47,7 +47,7 @@ pip install ucdeconvolve
 ## Quick Start Guide
 <p>
 <figure>
-<img align="right" src="https://user-images.githubusercontent.com/7418190/182958032-4e951ae2-a652-4968-aa76-04208df087c7.png">
+<img align="right" src="https://user-images.githubusercontent.com/7418190/182963249-6fde0191-7954-4d06-82cd-6111a1992f87.png">
 </figure>
 
 To demonstrate the functionality of UCD, we will perform a cell type deconvolution of a spatial gene expression section of the <a href="https://www.10xgenomics.com/resources/datasets/human-lymph-node-1-standard-1-0-0">human lymph node</a>, made available by 10X Genomics. We will utilize scanpy to quickly load the dataset, and then pass it into ucdeconvolve to obtain cell type predictions.
