@@ -2,6 +2,7 @@
 ![image](https://user-images.githubusercontent.com/7418190/148014006-1c522756-05b2-4e6f-9ab5-dec627405b57.png)
 ========
 <p align="center">
+<img alt="Version" src="https://img.shields.io/github/v/release/dchary/ucdeconvolve?include_prereleases">
 <img alt="Repo Size" src="https://img.shields.io/github/repo-size/dchary/ucdeconvolve">
 <img alt="Last Commit" src="https://img.shields.io/github/last-commit/dchary/ucdeconvolve?style=flat-square">
 <img alt="Commit Activity" src="https://img.shields.io/github/commit-activity/w/dchary/ucdeconvolve?style=flat-square">
