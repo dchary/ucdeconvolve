@@ -22,7 +22,6 @@ sys.path.append(os.path.abspath(os.path.join('..')))
 import ucdeconvolve._utils as ucd_utils
 
 
-
 # Test chunk function
 @pytest.mark.parametrize("test_input,expected", [([0,1,2,3,4,5,6,7,8,9,10], [[0, 1, 2], [3, 4, 5], [6, 7, 8], [9, 10]])])
 def test_chunk(test_input, expected):

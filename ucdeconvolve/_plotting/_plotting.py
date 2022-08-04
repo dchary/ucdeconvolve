@@ -17,8 +17,9 @@ top of 'scanpy.plotting' module.
 
 import anndata
 
-from .. import tools as ucdtools
+from .. import _tools as ucdtools
 from .. import _data as ucddata
+
 from typing import Union, Optional, Tuple, List, Dict
 import scanpy as sc
 import seaborn as sns
