@@ -3,5 +3,5 @@ pandas>=1.3.5
 numpy>=1.21.6
 progressbar2>=4.0.0
 numba>=0.55.2
-sklearn>=1.0.2
+scikit-learn>=1.0.2
 networkx>=2.6.3
