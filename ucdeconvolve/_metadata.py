@@ -3,7 +3,7 @@
 # # Contact: daniel.charytonowicz@icahn.mssm.edu
 # ###################################################################################################
 
-__version__ = "0.0.1"
+__version__ = "0.0.2"
 __author__ = "Daniel Charytonowicz"
 __email__ = "daniel.charytonowicz@icahn.mssm.edu"
 __institution__ = "Icahn School of Medicine at Mount Sinai"
