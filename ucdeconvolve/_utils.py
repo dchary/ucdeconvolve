@@ -647,7 +647,6 @@ def json_dump_and_compress(
     data : bytes
         A compressed bytestring of data
     
-    
     """
     
     return gzip.compress(json.dumps(data).encode(), compresslevel = compresslevel)
@@ -702,3 +701,4 @@ def log(
         
         # Remove the handler we added
         logger.removeHandler(handler)
+        

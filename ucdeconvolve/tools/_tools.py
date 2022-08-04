@@ -3,7 +3,7 @@
 # # Contact: daniel.charytonowicz@icahn.mssm.edu
 # ###################################################################################################
 
-from typing import Union, Optional, Tuple, List
+from typing import Union, Optional, Tuple, List, Dict
 import anndata
 import pandas as pd
 import numpy as np
@@ -11,17 +11,20 @@ import scipy
 import logging
 import time
 import math
+import progressbar
 
-from progressbar import progressbar
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
-from scipy.sparse import issparse
 
-from ._data import metadata
-from . import _utils as ucdutils
-from ._io import post_online_prediction
-from ._exceptions import InvalidTokenException
-from ._postprocessing import postprocess_predictions
+from .. import _data as ucddata
+from .. import _utils as ucdutils
+from .. import _io as ucdio
+from .. import _postprocessing as ucdpp
+
+from .._exceptions import InvalidTokenException
+
+from .._metadata import __version__ as ucdversion
+
 
 def deconvolve(
     data : Union[anndata.AnnData, pd.DataFrame],
@@ -30,12 +33,14 @@ def deconvolve(
     normalize_split_totals : bool = True,
     sort : bool = True,
     propagate : bool = True,
+    return_results : bool = False,
+    key_added : str = ucddata.metadata['default_key'],
     batchsize : int = 256,
     n_threads : int = 4,
     use_raw : bool = True,
     showprogress : bool = True,
     verbosity : int = logging.WARNING
-    ) -> Optional[Union[anndata.AnnData, pd.DataFrame]]:
+    ) -> Optional[Union[anndata.AnnData, Dict[str, pd.DataFrame]]]:
     """\
     UniCell Deconvolve
     
@@ -64,10 +69,16 @@ def deconvolve(
     sort
         Sort columns of results by mean predictions. Default True.
     propagate
-        whether or not to perform belief propagation and
+        Whether or not to perform belief propagation and
         pass predictions up a cell-type heiarchy. helpful
         in interpreting overall deconvolution results.
         default is True.
+    return_results
+        Whether or not to return the predictions dict from the function,
+        default to false as all data is written to anndata object either
+        passed in, or created when passing in a dataframe, which will
+        in that case be returned by default. Also returns the underlying
+        anndata if it is a view as copying can destroy context internally.
     batchsize
         Size of batches to process and send for predictions. Ideally should be
         divisible by 4 as batches are eventually split and sent as 4 prediction
@@ -95,15 +106,19 @@ def deconvolve(
 
         # Ensure data is correct type
         assert isinstance(data, (anndata.AnnData, pd.DataFrame)), "data must either be a dataframe or annotated dataset"
-
+        
         # If data is a dataframe, convert to annotated dataset
         adata = anndata.AnnData(data) if isinstance(data, pd.DataFrame) else data
-
-        # Use raw from adata if specified
-        adata = adata.raw.to_adata() if use_raw and adata.raw else adata
+                
+        # Record view status, will need to know if we have to return the eventual copy made as a result
+        # of running this function.
+        adata_is_view = adata.is_view
+        
+        # Use raw from adata if specified, keep original 'adata' as reference to append to and return
+        adata_use = adata.raw.to_adata() if use_raw and adata.raw else adata
 
         # Generate the gene remapping index features to organize data columns
-        features = ucdutils.remap_genes(ucdutils.match_to_gene(adata.var_names.tolist()))
+        features = ucdutils.remap_genes(ucdutils.match_to_gene(adata_use.var_names.tolist()))
 
         ###################################
         # Delayed Data Preprocessing Pipeline
@@ -113,18 +128,18 @@ def deconvolve(
         batchsize = min(256, batchsize)
 
         # Iterate adata in batches
-        dataset = ucdutils.chunk(adata.X, batchsize // 4)
+        dataset = ucdutils.chunk(adata_use.X, batchsize // 4)
         
         # calculate effective batch size
-        batchsize_effective = min(batchsize, max(adata.shape[0], adata.shape[0] // batchsize))
+        batchsize_effective = min(batchsize, max(adata_use.shape[0], adata_use.shape[0] // batchsize))
         
         # Log dataset metrics if desired
-        ucdlogger.debug(f"Using batchsize: {batchsize_effective} on dataset of shape: {adata.shape}")
-        ucdlogger.debug(f"Data will be sent in {math.ceil(adata.shape[0] / batchsize_effective)} packet(s)," + \
-                            f" each split into 4 sub-buffers of at most ~{batchsize_effective // 4} cells.")
+        ucdlogger.debug(f"Using batchsize: {batchsize_effective} on dataset of shape: {adata_use.shape}")
+        ucdlogger.debug(f"Data will be sent in {math.ceil(adata_use.shape[0] / batchsize_effective)} packet(s)," + \
+                            f" each split into 4 sub-buffers of at most ~{batchsize_effective // 4} samples.")
 
         # Convert batch to dense, cast to float32, and preprocess for predictions
-        dataset = map(lambda b : b.toarray() if issparse(b) else b, dataset)
+        dataset = map(lambda b : b.toarray() if  scipy.sparse.issparse(b) else b, dataset)
         dataset = map(lambda b : b.astype(np.float32, copy = False), dataset)
         dataset = map(lambda b : ucdutils.preprocess_expression(b, features), dataset)
 
@@ -151,10 +166,10 @@ def deconvolve(
         ###################################
 
         # Create a progressbar if showprogress is true otherwise passthrough
-        pbar = progressbar if showprogress else lambda x, max_value : x
+        pbar = progressbar.progressbar if showprogress else lambda x, max_value : x
 
         # Create a partial predict function and pass token information 
-        predict = partial(post_online_prediction, token = token)
+        predict = partial(ucdio.post_online_prediction, token = token)
 
         # Calculate number of iterations for progressbar
         n_iter = adata.shape[0] // batchsize
@@ -167,21 +182,75 @@ def deconvolve(
         with ThreadPoolExecutor(min(4, n_threads)) as executor:
             predictions = list(pbar(executor.map(predict, dataset), max_value = n_iter))
         
-        # Get total time to complete streaming
-        elapsed = time.time() - start
+        # Get total time to complete streaming, rate, and hold as dictionary
+        elapsed = round(time.time() - start,3)
+        rate = round(adata.shape[0] / elapsed,3)
+        runinfo = {'stream_time' : elapsed, 'stream_rate' : rate, 'split' : split}
         
         # Report end of data streaming and performance metrics
         ucdlogger.info("Data streaming complete.")
-        ucdlogger.debug(f"Streaming time: {round(elapsed,3)} (sec)")
-        ucdlogger.debug(f"Streaming rate: {round(adata.shape[0] / elapsed,3)} (samples / sec)")
+        ucdlogger.debug(f"Streaming time: {elapsed} (sec)")
+        ucdlogger.debug(f"Streaming rate: {rate} (samples / sec)")
 
         # Concatenate predictions back together
         predictions = np.concatenate(predictions)
         
         # Postprocess predictions
         ucdlogger.info("Postprocessing predictions.")
-        predictions = postprocess_predictions(predictions, split, normalize_split_totals, sort, propagate)
-
+        predictions = ucdpp.postprocess_predictions(predictions, split, normalize_split_totals, sort, propagate)
+        
+        # Append results to anndata with run metadata
+        ucdlogger.info("Writing results to anndata object.")
+        adata = ucdpp.append_predictions_to_anndata(predictions, adata, additional_runinfo = runinfo)
+        
         # Return predictions
         ucdlogger.info("UniCell Deconvolve Run Complete.")
-        return predictions
+        
+        # If the initial data was a dataframe, or a view of a truncated 
+        # anndata, we need to return the annotated dataset
+        # object made from it containing predictions
+        if isinstance(data, pd.DataFrame) or adata_is_view:
+            if return_results:
+                return predictions, adata
+            else:
+                return adata
+        else:
+            # Initial object was an anotated dataset
+            if return_results:
+                return predictions
+            
+            
+def read_results(
+    adata : anndata.AnnData,
+    category : Optional[str] = None,
+    key : str = ucddata.metadata['default_key']
+) -> pd.DataFrame:
+    """\
+    Read deconvolution results from an annotated dataset
+    and return a dataframe.
+    
+    Params
+    -------
+    adata
+        Annotated dataset with deconvolution results stored.
+    category
+        Which split category to use, defaults to 'all' if no
+        split was made, or 'primary' if a split is detected from
+        the run specificed by 'key'.
+    key
+        Key for deconvolution results, default key is 'ucd_results'
+    
+    """
+    
+    # Get the default split categry to show if none is provided
+    default_category = 'all' if not adata.uns[key]['runinfo']['split'] else 'primary'
+    category = default_category if not category else category
+    
+    # Get headers
+    headers = adata.uns[key]['headers'][category]
+    
+    # Get data
+    data = adata.obsm[f"{key}_{category}"]
+    
+    # Return dataframe
+    return pd.DataFrame(data, columns = headers, index = adata.obs_names)

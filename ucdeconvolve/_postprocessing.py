@@ -10,10 +10,12 @@ import anndata
 from scipy.sparse import issparse, spmatrix
 import scipy
 import logging
+from datetime import datetime
 
 from ._data import metadata
 from . import _utils as ucdutils
 from ._propagator import UCDeconvolvePredPropagator
+from ._metadata import __version__ as ucdversion
 
 def postprocess_predictions(
     predictions : np.ndarray,
@@ -201,3 +203,61 @@ def split_predictions(
     return splitpredictions
 
 
+def append_predictions_to_anndata(
+    predictions : Dict[str, pd.DataFrame],
+    adata : anndata.AnnData,
+    key_added : str = metadata['default_key'],
+    additional_runinfo : Optional[dict] = dict()
+):
+    """\
+    Append deconvolution results to anndata
+    
+    Params
+    -------
+    predictions
+        Dictionary of prediction(s) as dataframes.
+    adata
+        Annotated dataset object to append predictions to
+    key_added
+        Key to use as the results key, default to 'ucd_results'
+    additional_runinfo
+        Optional dictionary one can pass to add specific runinfo params
+    Returns
+    -------
+    adata
+        Annotated dataset with appended results
+        
+    """
+    
+    # Create a dict to hold results metadata
+    adata.uns[key_added] = dict()
+
+    # Create a dict to hold headers and run information 
+    headers = dict()
+    runinfo = dict()
+
+    # Add current version and timestamp of run
+    runinfo['ucdversion'] = ucdversion
+    runinfo['timestamp'] = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+    
+    # Append any additional run informations
+    runinfo.update(additional_runinfo)
+    
+    # Append each prediction to anndata object
+    for key, vals in predictions.items():
+        
+        # Get stem for each name (i.e. cancer, lines, primary)
+        key_stem = key.split("celltypes_",1)[-1]
+        
+        # Put each prediction raw numpy array in the 'adata.obsm' dict
+        adata.obsm[f"{key_added}_{key_stem}"] = predictions[key].values
+        
+        # Put header information into headers dict
+        headers[key_stem] = predictions[key].columns.str.lower().tolist()
+        
+    # Create a dicts to hold headers and run information 
+    adata.uns[key_added]['headers'] = headers
+    adata.uns[key_added]['runinfo'] = runinfo
+    
+    # Return appended adata
+    return adata

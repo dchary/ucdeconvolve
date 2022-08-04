@@ -21,9 +21,9 @@ from ._exceptions import InvalidTokenException
 def post_online_prediction(
     packet : bytes,
     token : str,
-    max_retries : int = 5,
+    max_retries : int = 6,
     retry_backoff_factor : float = 1.0,
-    timeout : int = 30
+    timeout : int = 60
 ) -> np.ndarray:
     """\
     
