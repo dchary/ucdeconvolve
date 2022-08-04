@@ -23,4 +23,4 @@ setup(name='ucdeconvolve',
       packages=find_packages(),
       package_data={'ucdeconvolve': ['data/metadata.pkl']},
       include_package_data = True,
-      zip_safe=False)a
+      zip_safe=False)
