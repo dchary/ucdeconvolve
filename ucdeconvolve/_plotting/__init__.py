@@ -4,3 +4,4 @@
 # ###################################################################################################
 
 from ._plotting import deconvolve
+from ._plotting import clustermap

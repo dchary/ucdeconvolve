@@ -89,3 +89,60 @@ def deconvolve(
     
     # Return the plot
     return sc.pl.embedding(adata, color = color, basis = basis, **kwargs)
+
+def clustermap(
+    adata : anndata.AnnData,
+    groupby : str,
+    category : Optional[str] = None,
+    key : str = ucddata.metadata['default_key'],
+    n_top_celltypes : int = 30,
+    **kwargs,
+) -> Optional:
+    """\
+    
+    Plot Clustered heatmap of top celltype predictions
+    grouped by a column in 'adata.obs'
+    
+    Params
+    -------
+    adata
+        The annotated dataset with deconvolution data
+    groupby
+        What column in 'adata.obs' to group celltype
+        predictions by (i.e. 'leiden').
+    category
+        Which category of prediction data to use if
+        split, or all of not split.
+    key
+        Key for deconvolution results, default is 'ucd_results'
+    n_top_celltypes
+        Number of top celltypes per category to take 
+        and plot. Smaller means only the most common types.
+    kwargs
+        Keyword attributes for clustermap. See
+        seaborn.clustermap for details.
+    Returns
+    -------
+    A clustermap
+    
+    """
+    
+    # Get deconvolution predictions
+    predictions = ucdtools.read_results(adata, category, key)
+    
+    # Get top predictions
+    top_celltypes = predictions.mean(0).sort_values(
+                        ascending = False).head(n_top_celltypes).index.tolist()
+    
+    # Subset predictions to only top celltypes
+    predictions = predictions[top_celltypes]
+    
+    # Group predictions by column in 'adata.obs'
+    predictions = predictions.groupby(adata.obs[groupby]).mean().T
+    
+    # Append defaults to kwargs if not overwritten
+    if 'cmap' not in kwargs.keys(): kwargs['cmap'] = 'viridis'
+    if 'row_cluster' not in kwargs.keys(): kwargs['row_cluster'] = False
+
+    # Generate the plot
+    return sns.clustermap(predictions, **kwargs)

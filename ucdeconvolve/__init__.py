@@ -9,5 +9,5 @@
 from ._metadata import __version__, __author__, __email__
 from ._metadata import __date__, __institution__, __laboratory__
 
-from . import tools as tl
-from . import plotting as pl
+from . import _tools as tl
+from . import _plotting as pl
