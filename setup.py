@@ -13,7 +13,7 @@ with pathlib.Path('requirements.txt').open() as reqsfile:
 
 # Setup package with params
 setup(name='ucdeconvolve',
-      version='0.0.2',
+      version='0.0.3',
       description='Cell Type Deconvolution For Transcriptomic Data',
       url='https://github.com/dchary/ucdeconvolve',
       author='Daniel Charytonowicz',
@@ -23,4 +23,4 @@ setup(name='ucdeconvolve',
       packages=find_packages(),
       package_data={'ucdeconvolve': ['data/metadata.pkl']},
       include_package_data = True,
-      zip_safe=False)
+      zip_safe=False)a

@@ -7,3 +7,5 @@ numba>=0.55.2
 scikit-learn>=1.0.2
 networkx>=2.6.3
 seaborn>=0.11.2
+urllib3>=1.26.8
+requests>2.27.1
