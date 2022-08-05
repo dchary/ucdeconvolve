@@ -33,6 +33,10 @@ release = '0.0.3'
 
 # -- General configuration ---------------------------------------------------
 
+rst_prolog = """
+:github_url: https://github.com/torvalds/linux
+"""
+
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
@@ -83,7 +87,7 @@ html_context = dict(
     github_user='dchary',  # Username
     github_repo='ucdeconvolve',  # Repo name
     github_version='main',  # Version
-    conf_py_path='/docs/',  # Path in the checkout to the docs root
+    conf_py_path='main/docs/',  # Path in the checkout to the docs root
 )
 
 # Add any paths that contain custom static files (such as style sheets) here,
