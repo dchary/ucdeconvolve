@@ -3,10 +3,10 @@ API
 
 .. module:: ucdeconvolve
 
-Deconvolution
+Tools
 ---------
 
-Generating deconvolution predictions.
+Generating deconvolution predictions and reading results.
 
 .. autosummary::
    :toctree: generated/
