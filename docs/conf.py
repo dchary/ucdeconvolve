@@ -77,6 +77,15 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 #
 html_theme = 'sphinx_rtd_theme'
 
+
+html_context = dict(
+    display_github=True,  # Integrate GitHub
+    github_user='dchary',  # Username
+    github_repo='ucdeconvolve',  # Repo name
+    github_version='main',  # Version
+    conf_py_path='/docs/',  # Path in the checkout to the docs root
+)
+
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
