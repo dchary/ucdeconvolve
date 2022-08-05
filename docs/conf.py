@@ -30,8 +30,31 @@ release = '0.0.3'
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
+
 extensions = [
+    "sphinx.ext.autodoc",
+    "sphinx.ext.intersphinx",
+    "sphinx.ext.doctest",
+    "sphinx.ext.coverage",
+    "sphinx.ext.mathjax",
+    "sphinx.ext.napoleon",
+    "sphinx.ext.autosummary",
+    "sphinx_autodoc_typehints"
 ]
+
+# Generate the API documentation when building
+autosummary_generate = True
+autodoc_member_order = "bysource"
+napoleon_google_docstring = False
+napoleon_numpy_docstring = True
+napoleon_include_init_with_doc = False
+napoleon_use_rtype = True  # having a separate entry generally helps readability
+napoleon_use_param = True
+napoleon_custom_sections = [("Params", "Parameters")]
+typehints_defaults = "braces"
+todo_include_todos = False
+suppress_warnings = ["ref.citation"]
+
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
