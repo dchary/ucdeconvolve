@@ -13,7 +13,13 @@
 # import os
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
+import os
+import sys
+from pathlib import Path
 
+localpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(localpath)
+import ucdeconvolve
 
 # -- Project information -----------------------------------------------------
 
