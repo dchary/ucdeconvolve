@@ -1,7 +1,7 @@
 |DocStatus| |Version| |RepoSize| |LastCommit| |CommitActivity| |Language|
 
 UniCell Deconvolve: Cell Type Deconvolution For Transcriptomic Data
-==============================================
+====================================================================
 
 .. |DocStatus| image:: https://readthedocs.org/projects/ucdeconvolve/badge/?version=latest
    :target: https://github.com/dchary/ucdeconvolve
@@ -22,8 +22,9 @@ UniCell Deconvolve (UCD) is a pre-trained deep learning model that provides cont
 * Discuss development on `GitHub <https://github.com/dchary/ucdeconvolve>`_.
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 3
    :hidden:
-
-   tutorials
+   
    api
+   tutorials
+

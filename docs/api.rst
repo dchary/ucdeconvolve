@@ -1,51 +1,21 @@
-```{eval-rst}
-.. module:: ucdeconvolve
-```
-
-```{eval-rst}
-.. automodule:: ucdeconvolve
-   :noindex:
-```
-
 API
-=========
+===
 
 Tools
----------
+-------
 
-```{eval-rst}
-.. module:: ucdeconvolve.tl
-```
+.. automodule:: ucdeconvolve.tl
+   :imported-members:
+   :members:
 
-```{eval-rst}
-.. currentmodule:: ucdeconvolve
-```
+Plotting 
+--------
 
-Generating deconvolution predictions and reading results.
 
-```{eval-rst}
-.. autosummary::
-   :toctree: generated/
-
-   tl.deconvolve
-   tl.read_results
-```
-
-Plotting
----------
-
-```{eval-rst}
-.. module:: ucdeconvolve.pl
-```
-
-```{eval-rst}
-.. currentmodule:: ucdeconvolve
-```
-
-Visualizing deconvolution results
-
-.. autosummary::
-   :toctree: generated/
-
-   pl.deconvolve
-   pl.clustermap
+.. automodule:: ucdeconvolve.pl
+   :imported-members:
+   :members:
+   
+   
+.. toctree::
+   :maxdepth: 3
