@@ -5,3 +5,6 @@
 
 class InvalidTokenException(Exception):
     pass
+
+class PacketSizeException(Exception):
+    pass

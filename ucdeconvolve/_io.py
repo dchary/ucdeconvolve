@@ -67,7 +67,7 @@ def post_online_prediction(
                                allowed_methods = ["HEAD","GET","POST","OPTIONS"])
         
         # Setup a retry adapter and add it to session
-        session.mount("https://", HTTPAdapter(max_retries=retry_strategy))
+        #session.mount("https://", HTTPAdapter(max_retries=retry_strategy))
 
         # Update session headers
         headers = {"Content-Type": "application/gzip", "x-api-key" : token}
@@ -80,6 +80,8 @@ def post_online_prediction(
             
             # Attempt to get a response
             response = session.send(request.prepare(), timeout = timeout)
+            
+            
 
             # Check status code of response
             if response.status_code == 200:
@@ -113,6 +115,7 @@ def post_online_prediction(
                 ucdlogger.error(f"Failed status code {response.status_code}, returning empty predictions.")
                 
         except Exception as e:
+            raise e
             
             # If the error was an invalid token exception, raise the error above the packet
             # level as we want to terminate the entire procese.

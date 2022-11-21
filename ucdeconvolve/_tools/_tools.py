@@ -22,6 +22,7 @@ from .. import _io as ucdio
 from .. import _postprocessing as ucdpp
 
 from .._exceptions import InvalidTokenException
+from .._exceptions import PacketSizeException
 
 from .._metadata import __version__ as ucdversion
 
@@ -157,7 +158,7 @@ def deconvolve(
 
         # Dump dict into json bytestring and perform final compression
         dataset = map(lambda b : ucdutils.json_dump_and_compress(b), dataset)
-        
+
         # Report status
         ucdlogger.debug("Data pipeline ready.")
         
