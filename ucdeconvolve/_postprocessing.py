@@ -67,7 +67,6 @@ def postprocess_predictions(
     # Convert predictions to float32
     predictions = predictions.astype(np.float32)
     
-        
     # Invalid predictions are those where -1 is returned
     # Save a record here to set to NaN at the end
     invalid_responses = predictions.min(1) == -1
