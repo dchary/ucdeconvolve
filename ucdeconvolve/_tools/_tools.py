@@ -125,14 +125,15 @@ def deconvolve(
         # Delayed Data Preprocessing Pipeline
         ###################################
         
-        # Cap batchsize to 256
+        # Cap batchsize & thread counts
         batchsize = min(256, batchsize)
+        effective_threads = min(4, n_threads)
 
         # Iterate adata in batches
-        dataset = ucdutils.chunk(adata_use.X, batchsize // 4)
+        dataset = ucdutils.chunk(adata_use.X, batchsize // effective_threads)
         
         # calculate effective batch size
-        batchsize_effective = min(batchsize, max(adata_use.shape[0], adata_use.shape[0] // batchsize))
+        batchsize_effective = min(batchsize, max(adata_use.shape[0], adata_use.shape[0] // 4))
         
         # Log dataset metrics if desired
         ucdlogger.debug(f"Using batchsize: {batchsize_effective} on dataset of shape: {adata_use.shape}")
@@ -150,7 +151,7 @@ def deconvolve(
         # Encode data transfer packet
         dataset = map(lambda b : ucdutils.write_sparse_packet(b), dataset)
 
-        # Create batch of 4 buffered packets to send over HTTPS and compress
+        # Create batch of buffered packets to send over HTTPS and compress
         dataset = ucdutils.buffer(dataset, 4)
 
         # Format packets list into instances dict required by prediction endpoint
@@ -180,7 +181,8 @@ def deconvolve(
         start = time.time()
         
         # Send prediction requests using a threadpool
-        with ThreadPoolExecutor(min(4, n_threads)) as executor:
+        ucdlogger.debug(f"Streaming using {effective_threads} thread(s).")
+        with ThreadPoolExecutor(effective_threads) as executor:
             predictions = list(pbar(executor.map(predict, dataset), max_value = n_iter))
         
         # Get total time to complete streaming, rate, and hold as dictionary
@@ -199,7 +201,7 @@ def deconvolve(
         # Postprocess predictions
         ucdlogger.info("Postprocessing predictions.")
         predictions = ucdpp.postprocess_predictions(predictions, split, normalize_split_totals, sort, propagate)
-        
+    
         # Append results to anndata with run metadata
         ucdlogger.info("Writing results to anndata object.")
         adata = ucdpp.append_predictions_to_anndata(predictions, adata, additional_runinfo = runinfo)

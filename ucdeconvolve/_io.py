@@ -63,15 +63,14 @@ def post_online_prediction(
         # Setup three maximum retries with a 0.25s backoff factor
         retry_strategy = Retry(total = max_retries, 
                                backoff_factor = retry_backoff_factor,
-                               status_forcelist = [500, 502, 503, 504],
+                               status_forcelist = [500, 502, 503, 504, 429],
                                allowed_methods = ["HEAD","GET","POST","OPTIONS"])
         
         # Setup a retry adapter and add it to session
-        #session.mount("https://", HTTPAdapter(max_retries=retry_strategy))
+        session.mount("https://", HTTPAdapter(max_retries=retry_strategy))
 
         # Update session headers
         headers = {"Content-Type": "application/gzip", "x-api-key" : token}
-        
 
         # Create the actual request
         request = requests.Request('POST', metadata['gateway_url'], data = packet, headers = headers)
@@ -81,8 +80,6 @@ def post_online_prediction(
             # Attempt to get a response
             response = session.send(request.prepare(), timeout = timeout)
             
-            
-
             # Check status code of response
             if response.status_code == 200:
 
@@ -109,7 +106,6 @@ def post_online_prediction(
                 
             elif response.status_code == 400:
                 raise InvalidTokenException("Please pass a valid API token to use this service.")
-                
             else:
                 # Report failed response code
                 ucdlogger.error(f"Failed status code {response.status_code}, returning empty predictions.")
@@ -130,5 +126,7 @@ def post_online_prediction(
         # recoverable, yield an empty array of negative 1s.
         packet_shapes = ucdutils.read_sparse_packet_attr(packet, attr = 'shape')
         
-        return np.concatenate([-1 * np.ones(tuple(x), np.float16) for x in packet_shapes])
+        # We only need to take the batch dimension from the packet shape, the returned value
+        # is going to be the prediction width of 842
+        return np.concatenate([-1 * np.ones((tuple(x)[0], 842), np.float16) for x in packet_shapes])
     

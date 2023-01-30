@@ -67,6 +67,16 @@ def postprocess_predictions(
     # Convert predictions to float32
     predictions = predictions.astype(np.float32)
     
+        
+    # Invalid predictions are those where -1 is returned
+    # Save a record here to set to NaN at the end
+    invalid_responses = predictions.min(1) == -1
+    
+    # If more than one invalid, report it to the user
+    if invalid_responses.sum() > 0:
+        pct_invalid = (1.0 * invalid_responses.sum()) / invalid_responses.shape[0]
+        ucdlogger.warning(f"{pct_invalid:.0%} of returned predictions invalid. Consider re-running.")
+
     # Report status
     ucdlogger.debug("Splitting predictions.") if split else ucdlogger.debug("Skipping split predictions.")
     
@@ -106,7 +116,12 @@ def postprocess_predictions(
 
             # Reindex based on sorted order
             predictions[key] = predictions[key][order]
+            
+        # If a prediction was invalid (i.e. server time-out, etc...) then we need to save that
+        # prediction as NaN here
+        predictions[key].loc[invalid_responses, :] = np.nan
                 
+    # Return the preprocessed prediction data
     return predictions
 
 
