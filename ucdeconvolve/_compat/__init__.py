@@ -3,10 +3,6 @@
 # # Contact: daniel.charytonowicz@icahn.mssm.edu
 # ###################################################################################################
 
-# Unicell V1 API
-# For legacy API see "ucd.compat" module.
+from ._tools import deconvolve
+from ._tools import read_results
 
-
-from ._select import deconvolve_select as select
-from ._base import deconvolve_base as base
-from ._explain import deconvolve_explain as explain

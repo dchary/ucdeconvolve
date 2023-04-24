@@ -3,5 +3,14 @@
 # # Contact: daniel.charytonowicz@icahn.mssm.edu
 # ###################################################################################################
 
-from ._plotting import deconvolve
-from ._plotting import clustermap
+# Load common plotting functions
+from ._common_plotting import embedding
+from ._common_plotting import spatial
+
+# Load tool-specific plotting functions
+from ._base_plotting import base_clustermap
+from ._explain_plotting import explain_clustermap
+from ._explain_plotting import explain_boxplot
+
+# Load colormaps
+from ._colormaps import CM

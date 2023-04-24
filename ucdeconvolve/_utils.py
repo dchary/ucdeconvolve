@@ -4,7 +4,9 @@
 # ###################################################################################################
 
 from typing import Union, Optional, Tuple, List, Iterable, Dict
+
 from ._data import metadata
+
 import pandas as pd
 import numpy as np
 import re
@@ -13,8 +15,11 @@ from scipy.sparse import issparse, spmatrix
 import gzip
 import base64
 import scipy
+import time
+import math
 import json
 import logging
+import progressbar
 from contextlib import contextmanager
 
 def chunk(
@@ -360,7 +365,10 @@ def preprocess_expression(
     feature_index : Union[Iterable[str], np.ndarray],
     sum_total : float = 1e4,
     log_detect_threshold : float = 80.0,
-    clip_threshold : float = 10.0
+    clip_threshold : float = 10.0,
+    zscore : bool = True,
+    minmax : bool = True,
+    reindex : bool = True,
 ) -> np.ndarray:
     """\
     
@@ -378,7 +386,13 @@ def preprocess_expression(
         maximum value to use to detect if genes are log-normalized already.
     clip_threshold
         threshold for clipping z-scores
-        
+    zscore
+        do zscore
+    minmax
+        do minmax scaling
+    reindex
+        do reindex
+
     Returns
     -------
     exp : np.ndarray
@@ -387,7 +401,7 @@ def preprocess_expression(
     """
     
     # Start by reindexing data columns to match required shape by model
-    exp = reindex_array_by_columns(exp, feature_index, len(metadata['target_genes']))
+    if reindex: exp = reindex_array_by_columns(exp, feature_index, len(metadata['target_genes']))
     
     # Make sure that each row is not log normalized already.
     exp = np.expm1(exp) if exp.max() < log_detect_threshold else exp
@@ -399,13 +413,13 @@ def preprocess_expression(
     exp = np.log1p(exp)
     
     # Center data and normalize variance with z-score
-    exp = scale_to_z_score(exp, axis = 1)
+    if zscore: exp = scale_to_z_score(exp, axis = 1)
     
     # Clip z-score range 
-    exp = np.clip(exp, -clip_threshold, clip_threshold)
+    if zscore: exp = np.clip(exp, -clip_threshold, clip_threshold)
     
     # Rescale data to minmax from 0 - 1
-    exp = scale_to_min_max(exp, 0.0, 1.0, axis = 1)
+    if minmax: exp = scale_to_min_max(exp, 0.0, 1.0, axis = 1)
     
     # Ensure no nans or infinities
     exp = np.nan_to_num(exp, nan = 0.0, posinf = 0.0, neginf = 0.0)
@@ -650,6 +664,7 @@ def json_dump_and_compress(
     """
     
     return gzip.compress(json.dumps(data).encode(), compresslevel = compresslevel)
+
     
 @contextmanager
 def log(
@@ -702,3 +717,447 @@ def log(
         # Remove the handler we added
         logger.removeHandler(handler)
         
+        
+@contextmanager
+def timer(
+    logger : logging.Logger,
+    start_msg : str = "",
+    end_msg : str = "",
+    level : Union[Tuple[int, int], int] = logging.DEBUG
+) -> None:
+    """\
+    Creates a timer context that will log time of a code block execution.
+    
+    Params
+    -------
+    logger
+        A logging object that will write results 
+    start_msg
+        A description to mark the start of the timer
+    end_msg
+        A description to append to the timer at the end of the code block
+    level
+        Logging level, default is debug. Can be a tuple, if so then level is
+        applied differently between start and end message.
+    """
+    
+    # Determine start and end levels
+    level_start, level_end = (level, level) if isinstance(level, int) else level
+    
+    class _var:
+        def __init__(self, elapsed):
+            self.elapsed = elapsed
+            
+    elapsedtime = _var(-1)
+    
+    # Enter block
+    try:
+        logger.log(level_start, f"{start_msg} | Timer Started.")
+        start = time.time()
+        yield elapsedtime
+    finally:
+        end = time.time()
+        
+        elapsedtime.elapsed = round(end - start, 3)
+        
+        logger.log(level_end, f"{end_msg} | Elapsed Time: {elapsedtime.elapsed} (s)")
+        
+
+def try_get_raw(
+    adata : anndata.AnnData,
+    use_raw : bool = True,
+) -> anndata.AnnData:
+    """\
+    
+    Try Get Raw
+    
+    Attempts to get raw anndata view if it exists, otherwise return original object.
+    
+    Params
+    -------
+    adata
+        Annotated dataset
+    use_raw
+        Flag to get or not get depending on outer function.
+    
+    Returns
+    -------
+    adata : anndata.AnnData
+        Either raw or original.
+    
+    """
+    
+    return adata.raw.to_adata() if use_raw and adata.raw else adata
+
+def matrix_reduce_groupby(
+    m : Union[scipy.sparse.csr_matrix, np.ndarray],
+    g : Iterable,
+    op : np.ufunc = np.mean,
+    **op_kwargs
+) -> scipy.sparse.csr_matrix:
+    """\
+    Group-Reduce a CSR matrix by a given series.
+    
+    Params
+    -------
+    m : Union[scipy.sparse.csr_matrix, np.ndarray]
+        A sparse or dense matrix to reduce along first dimension.
+    g : Iterable
+        An iterable to group on. Length should match
+        the first dimension of m.
+    op : np.ufunc
+        numpy function to apply across axis
+    op_kwargs
+        kwargs to op
+    Returns
+    -------
+    m : Union[scipy.sparse.csr_matrix, np.ndarray]
+        A reduced sparse or dense matrix
+    c : List
+        Ordered list of unique values from g, in order
+        that they appear in reduced matrix m.
+    """
+    
+    # Get list of unique values in g
+    c = list(set(g))
+    
+    # Return arrays
+    return np.array(np.stack([op(m[np.where(g == i)], **op_kwargs) for i in c])), c
+
+def collapse_anndata(
+    adata : anndata.AnnData,
+    key : Optional[str] = None,
+    op : np.ufunc = np.mean
+) -> anndata.AnnData:
+    """\
+    Collapse Anndata
+    
+    Collapsed based on a column in 'adata.obs', whereby
+    gene values are averaged together.
+    
+    Params
+    -------
+    adata
+        Annotated datset
+    key
+        Value in 'adata.obs' to collapse on
+    op
+        Means of collapse, default is mean
+    Returns
+    -------
+    adata_collapsed : anndata.AnnData
+        Annotated dataset collapsed
+    
+    """
+    
+    # If not key provided create a dummy var
+    if not key:
+        adata.obs['dk0'] = "one"
+        adata.obs.dk0 = adata.obs.dk0.astype("category")
+        key = 'dk0'
+    
+    # Reduce the data matrix based on the provided key
+    # Collect mean, variance, and counts for t-test calculations later
+    X_mu_grouped, categories = matrix_reduce_groupby(adata.X, adata.obs[key], op = op, axis = 0)
+    
+    
+    
+    # Recreate the annotated dataset using just this reduced matrix and the key
+    # Note that this drops all other attributes
+    adata_collapsed = anndata.AnnData(X_mu_grouped, 
+                        obs = pd.DataFrame({key : categories}),
+                        var = adata.var)
+    
+    return adata_collapsed
+
+
+def create_dataset(
+    adata : anndata.AnnData,
+    use_raw : bool = True,
+    batchsize : int = 256,
+    features : Optional[List[str]] = None,
+    dtype : np.dtype = np.float32,
+    return_sparse : bool = False,
+    **kwargs
+) -> map:
+    """\
+    
+    Create dataset
+    
+    Creates a batched dataset
+    """
+    
+    # Get raw if desired
+    adata = adata.raw if (adata.raw and use_raw) else adata
+    
+
+    # Subset on use_feature if provided
+    if features: 
+        adata = adata[:, features]
+        
+    # Get feature names and map them to common indexes
+    feature_index = remap_genes(match_to_gene(adata.var_names.tolist()))
+
+    dataset = chunk(adata.X, batchsize)
+    dataset = map(lambda b : b.toarray() if  scipy.sparse.issparse(b) else b, dataset)
+    dataset = map(lambda b : b.astype(dtype, copy = False), dataset)
+    dataset = map(lambda b : preprocess_expression(b, feature_index = feature_index, **kwargs), dataset)
+    dataset = map(lambda b : scipy.sparse.csr_matrix(b, dtype = dtype) if return_sparse else b, dataset)
+    
+    return dataset
+
+
+def get_preprocessed_anndata(
+    adata : anndata.AnnData,
+    progress : bool = True,
+    batchsize : int = 256,
+    desc : str = None,
+    minmax : bool = False,
+    zscore : bool = False,
+    return_sparse : bool = True,
+    ) -> anndata.AnnData:
+    """\
+    Preprocess Input AnnData
+    
+    Takes an unnormalized AnnData and converts gene vectors to match inputs needed for UCD.
+    
+    Params
+    -------
+    adata
+        An annotated dataset
+
+    progress
+        Show progressbar 
+    Returns
+    -------
+    adata_norm : anndata.AnnData
+        Normalized COPY of the underlying anndata with standardized gene symbols in UCD compatible order,
+        along with expression values that have been count-normalized and log1p scaled.
+        
+    """
+    
+    # Preprocess dataset batched, note we do not perform minmax or zscoring here for base model as its done server-side?
+    # We need to do these transforms for the embedding model as its older and doesn't perform these functions server-side??
+    dataset = create_dataset(adata, batchsize = batchsize, minmax = minmax, zscore = zscore, return_sparse = return_sparse)
+
+    # Get normalized anndata object for upload, keep obs
+    adata_normed = anndata.AnnData(
+                            X = scipy.sparse.vstack(tuple(
+                                progressbar.progressbar(dataset, 
+                                    max_value = math.ceil(adata.shape[0] / batchsize),
+                                    prefix = f"Preprocessing {desc} | " if desc else None) \
+                                        if progress else dataset)), 
+                            obs = adata.obs,
+                            var = pd.DataFrame(index = pd.Index(metadata['target_genes'])))
+    
+    # Return normalized dataset
+    return adata_normed
+
+
+
+def read_results(
+    adata : anndata.AnnData,
+    key : Optional[str] = None,
+    category : Optional[str] = None,
+    celltypes : Optional[Union[str, List[str]]] = None,
+    explain_n_top_genes : Optional[int] = None,
+) -> pd.DataFrame:
+    """\
+    Read deconvolution results from an annotated dataset
+    and return a dataframe.
+    
+    Params
+    -------
+    adata
+        Annotated dataset with deconvolution results stored.
+    key
+        Key for deconvolution results. If not passed, will
+        default to searching for 'ucdbase', then 'ucdselect',
+        and lastly 'ucdexplain'.
+    category
+        Which split category to use. Defaults to 'all' if running
+        non-base model. If run base and split was made, uses 'primary'.
+    celltypes
+        The celltypes specifically to read results from, if None
+        then all celltypes from explanation are read and 
+        combined in a multi-index dataframe. For ucdselect and ucdbase
+        celltypes will subset the returned dataframe.
+    explain_n_top_genes
+        Number of genes to extract when reading explanations,
+        if None then return all genes.
+    """
+    
+    # Get default key
+    if not key:
+        if 'ucdbase' in adata.uns.keys():
+            key = 'ucdbase'
+        elif 'ucdselect' in adata.uns.keys():
+            key = 'ucdselect'
+        elif 'ucdexplain' in adata.uns.keys():
+            key = 'ucdexplain'
+        else:
+            raise Exception("No key passed and no default key found.")
+    
+    # Determine which function to run depending on method read from key
+    method = adata.uns[key]['runinfo']['method']
+    
+    # If method is explain, run the unique expain read function
+    if method == 'explain': 
+        return _explain_read_results(
+            adata = adata,
+            celltypes = celltypes,
+            n_top_genes = explain_n_top_genes,
+            key = key)
+    else:
+        
+        # Otherwise, Get default category if none provided
+        if not category:
+            keys = adata.uns[key]['headers'].keys()
+            category = 'primary' if 'primary' in keys else 'all'
+
+        # Get headers
+        headers = adata.uns[key]['headers'][category]
+
+        # Get data
+        data = adata.obsm[f"{key}_{category}"]
+
+        # Get dataframe
+        predictions = pd.DataFrame(data, columns = headers, index = adata.obs_names)
+        
+        # Subset if desired
+        predictions = predictions[celltypes] if celltypes else predictions
+        
+        # Return dataframe
+        return predictions
+
+
+def _explain_read_results(
+    adata : anndata.AnnData,
+    celltypes : Optional[Union[str, List[str]]] = None,
+    n_top_genes : Optional[int] = None,
+    key : str = "ucdexplain"
+) -> pd.DataFrame:
+    """\
+    Read explanation results from annotated dataset.
+    
+    Note this densifies a sparse matrix so be careful when
+    running on a large result table.
+    
+    Params
+    -------
+    adata
+        Annotated dataset with explanation results stored.
+    celltypes
+        The celltypes specifically to read results from, if None
+        then all celltypes from explanation are read and 
+        combined in a multi-index dataframe
+    n_top_genes
+        Number of genes to extract, if None then all genes.
+    key
+        Key for explanation results, default key is 'ucdexplain'
+    
+    Returns
+    -------
+    expl : pd.DataFrame
+        Explanation results
+        
+    """
+                        
+                        
+    # Get celltype and mask keys from results key
+    key_celltype = f"{key}_celltype"
+    key_mask = f"{key}_mask"
+    
+    # Subset anndata based on mask
+    adata_mask = adata[adata.obs[key_mask]]
+    
+    # Process conditions for celltypes param
+    if not celltypes:
+        
+        # Get all celltypes
+        celltypes = tuple(adata_mask.obs[key_celltype].unique())
+        
+    elif isinstance(celltypes, str):
+        
+        # If just one celltype passed, then make tuple
+        celltypes = (celltypes,)
+        
+    # Subset out celltypes
+    adata_mask_celltypes = adata_mask[
+        adata_mask.obs[key_celltype].isin(celltypes)]
+    
+    # Get explanations data 
+    expl = adata_mask_celltypes.obsm[key]
+    
+    # If None n_top_genes then all genes
+    n_top_genes = n_top_genes if n_top_genes else 28867
+        
+    # Get top gene indices in descending order
+    top_gene_indices = np.argsort(np.array(expl.mean(0)).flatten())[::-1][0:n_top_genes]
+    
+    # Get top gene names
+    top_gene_names = np.array(metadata['target_genes'])[top_gene_indices]
+
+    # Create a multiindex from original row indices and celltype names
+    index = pd.MultiIndex.from_arrays([
+        adata_mask_celltypes.obs[key_celltype],
+        adata_mask_celltypes.obs_names],
+        names = ["celltype", adata_mask_celltypes.obs_names.name])
+    
+    # Get dataframe
+    df = pd.DataFrame(data = expl[:, top_gene_indices].toarray(),
+                index = index,
+                columns = top_gene_names)
+    
+    # Sort on first levle
+    df = df.sort_index(level="celltype")
+    
+    return df
+
+
+
+
+def find_common_genes(
+    adata_mixture : anndata.AnnData,
+    adata_reference : anndata.AnnData,
+    return_target_indices : bool = True,
+    ) -> np.ndarray:
+    """\
+    
+    Finds the best genes to discriminate cell types between reference and mixture
+    
+    Params
+    -------
+    adata_mixture
+        Anndata mixture object
+    adata_reference
+        Anndata reference object
+    return_target_indices
+        Whether to return the indices of common genes as positions in UCD target gene set.
+    
+    Returns
+    -------
+    
+    """
+    
+    # Get average expression across all samples / cells
+    mean_exp_reference = np.array(adata_reference.X.mean(0)).flatten()
+    mean_exp_mixtures = np.array(adata_mixture.X.mean(0)).flatten()
+
+    # Get top 20% expressed genes from each group for genes with exp > 0
+    min_exp_reference = np.quantile(mean_exp_reference[mean_exp_reference > 0], 0.8)
+    min_exp_mixture = np.quantile(mean_exp_mixtures[mean_exp_mixtures > 0], 0.8)
+    
+    # Get the gene symbols that match requirements
+    min_features_reference = adata_reference.var_names.values[mean_exp_reference > min_exp_reference]
+    min_features_mixture = adata_mixture.var_names.values[mean_exp_mixtures > min_exp_mixture]
+    
+    # Find intersection of common gene symbols
+    common_genes = np.intersect1d(min_features_reference, min_features_mixture)
+    
+    if not return_target_indices:
+        return common_genes
+    else:
+        common_genes_indices = np.array(list(map(metadata['target_genes'].index, 
+                                                 common_genes)), dtype = np.int32)
+        return common_genes_indices
