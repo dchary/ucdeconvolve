@@ -1,5 +1,5 @@
 ####################################################################################################
-# # Copyright (C) 2022-Present - Daniel Charytonowicz - All Rights Reserved
+# # Copyright (C) 2023-Present - Daniel Charytonowicz - All Rights Reserved
 # # Contact: daniel.charytonowicz@icahn.mssm.edu
 # ###################################################################################################
 
@@ -13,7 +13,7 @@ with pathlib.Path('requirements.txt').open() as reqsfile:
 
 # Setup package with params
 setup(name='ucdeconvolve',
-      version='0.0.6',
+      version='0.1.0',
       description='Cell Type Deconvolution For Transcriptomic Data',
       url='https://github.com/dchary/ucdeconvolve',
       author='Daniel Charytonowicz',

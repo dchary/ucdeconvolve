@@ -220,7 +220,7 @@ def split_predictions(
 def append_predictions_to_anndata(
     predictions : Dict[str, pd.DataFrame],
     adata : anndata.AnnData,
-    key_added : str = metadata['default_key'],
+    key_added : str = "ucdbase",
     additional_runinfo : Optional[dict] = dict()
 ):
     """\
@@ -233,7 +233,7 @@ def append_predictions_to_anndata(
     adata
         Annotated dataset object to append predictions to
     key_added
-        Key to use as the results key, default to 'ucd_results'
+        Key to use as the results key, default to 'ucdbase'
     additional_runinfo
         Optional dictionary one can pass to add specific runinfo params
     Returns

@@ -6,6 +6,7 @@
 import bz2
 import pickle
 import os
+from dataclasses import dataclass
 from typing import Optional
 
 def __update_metadata_dict(
@@ -51,3 +52,9 @@ def __update_metadata_dict(
 # Load metadata files
 with bz2.BZ2File(os.path.join(os.path.dirname(__file__), "data/metadata.pkl"), 'rb') as f:
     metadata = pickle.load(f)
+    
+# Create a dataclass for storing & persisting API key across invocations
+@dataclass
+class Credentials:
+    token : Optional[str] = None
+credentials = Credentials()
