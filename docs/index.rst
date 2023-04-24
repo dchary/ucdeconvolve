@@ -24,6 +24,7 @@ UniCell Deconvolve (UCD) is a pre-trained deep learning model that provides cont
 
 .. toctree::
    :maxdepth: 3
+   :hidden:
    
    installation
    tutorials

@@ -26,6 +26,7 @@ import ucdeconvolve
 project = 'UniCell Deconvolve'
 copyright = '2023, Daniel Charytonowicz'
 author = 'Daniel Charytonowicz'
+repository_url = "https://github.com/dchary/ucdeconvolve"
 
 # The full version, including alpha/beta/rc tags
 release = '0.1.0'
@@ -78,7 +79,13 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', '**.ipynb_checkpoints']
 # a list of builtin themes.
 #
 html_theme = 'sphinx_rtd_theme'
-html_theme_options = {'navigation_depth': 9}
+html_theme_options = {
+    'navigation_depth': 9,
+    "repository_url": repository_url,
+    "use_repository_button": True,
+    "logo_only": True,
+    "show_toc_level": 4,  # show all levels in the sidebar
+}
 github_url = "https://github.com/dchary/ucdeconvolve"
 html_context = dict(
     display_github=True,  # Integrate GitHub
