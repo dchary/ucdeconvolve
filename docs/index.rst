@@ -21,10 +21,11 @@ UniCell Deconvolve (UCD) is a pre-trained deep learning model that provides cont
 * Install via ``pip install ucdeconvolve``.
 * Discuss development on `GitHub <https://github.com/dchary/ucdeconvolve>`_.
 
+
 .. toctree::
    :maxdepth: 3
-   :hidden:
    
-   api
+   installation
    tutorials
+   api
 

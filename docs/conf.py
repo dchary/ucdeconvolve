@@ -24,11 +24,11 @@ import ucdeconvolve
 # -- Project information -----------------------------------------------------
 
 project = 'UniCell Deconvolve'
-copyright = '2022, Daniel Charytonowicz'
+copyright = '2023, Daniel Charytonowicz'
 author = 'Daniel Charytonowicz'
 
 # The full version, including alpha/beta/rc tags
-release = '0.0.3'
+release = '0.1.0'
 
 
 # -- General configuration ---------------------------------------------------
@@ -93,3 +93,6 @@ html_context = dict(
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
+html_show_sphinx = False
+html_logo = '_static/img/logo_unicell.png'
+html_title = "ucdeconvolve"
