@@ -26,7 +26,6 @@ import scipy
 import warnings
 import tempfile
 import requests
-import hdf5plugin
 import mudata
 import anndata
 
@@ -206,7 +205,7 @@ def upload_mudata_to_cloud_storage_url(
         # Write out packaged anndatas to tmp, 
         with warnings.catch_warnings():
             warnings.simplefilter(action='ignore', category=UserWarning)
-            mdata.write_h5mu(tmpfilename, compression = hdf5plugin.FILTERS['blosc'])
+            mdata.write_h5mu(tmpfilename, compression = "gzip")
         
         # Check file size
         filesize = os.path.getsize(tmpfilename)
