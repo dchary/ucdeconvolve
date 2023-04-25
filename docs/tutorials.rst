@@ -7,4 +7,5 @@ Browse some tutorials for how to get started with using UCD for your projects us
    :maxdepth: 3
    :hidden:
    
+   
    notebooks/spatial_example

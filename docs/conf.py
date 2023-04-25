@@ -27,7 +27,7 @@ project = 'UniCell Deconvolve'
 copyright = '2023, Daniel Charytonowicz'
 author = 'Daniel Charytonowicz'
 repository_url = "https://github.com/dchary/ucdeconvolve"
-
+github_url = "https://github.com/dchary/ucdeconvolve"
 # The full version, including alpha/beta/rc tags
 release = '0.1.0'
 
@@ -47,12 +47,14 @@ extensions = [
     "sphinx.ext.mathjax",
     "sphinx.ext.napoleon",
     "sphinx.ext.autosummary",
-    "nbsphinx"
+    "nbsphinx",
+    "myst_parser"
 ]
 
 # Generate the API documentation when building
 autosummary_generate = True
 autodoc_member_order = "bysource"
+issues_github_path = "dchary/ucdeconvolve"
 #napoleon_google_docstring = False
 napoleon_numpy_docstring = True
 #napoleon_include_init_with_doc = False
@@ -79,22 +81,17 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', '**.ipynb_checkpoints']
 # a list of builtin themes.
 #
 html_theme = 'sphinx_rtd_theme'
+
 html_theme_options = {
     'navigation_depth': 9,
-    "repository_url": repository_url,
-    "use_repository_button": True,
     "logo_only": True,
-    "show_toc_level": 4,  # show all levels in the sidebar
+    "collapse_navigation" : False
 }
-github_url = "https://github.com/dchary/ucdeconvolve"
-html_context = dict(
-    display_github=True,  # Integrate GitHub
-    github_user='dchary',  # Username
-    github_repo='ucdeconvolve',  # Repo name
-    github_version='main',  # Version
-    github_url="https://github.com/dchary/ucdeconvolve",
-    conf_py_path='main/docs/',  # Path in the checkout to the docs root
-    )
+
+add_function_parentheses = False
+nbsphinx_allow_errors = True
+nbsphinx_execute = 'never'
+
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -103,3 +100,7 @@ html_static_path = ['_static']
 html_show_sphinx = False
 html_logo = '_static/img/logo_unicell.png'
 html_title = "ucdeconvolve"
+
+html_sidebars = {
+    "**": ["logo-text.html", "globaltoc.html", "localtoc.html", "searchbox.html"]
+}

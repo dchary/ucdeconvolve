@@ -1,7 +1,5 @@
 ## Installation
-===============
-
-## PyPI
+----------------
 
 To install ucdeconvolve using pypi, run the following terminal command:
 
