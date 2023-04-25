@@ -1,7 +1,7 @@
-Tutorials
+Basic Tutorials
 =========
 
-Browse some tutorials for how to get started with using UCD for your projects using the navbar.
+Browse some basic tutorials for how to get started with using UCD for your projects using the navbar.
 
 .. toctree::
    :maxdepth: 3
@@ -9,3 +9,4 @@ Browse some tutorials for how to get started with using UCD for your projects us
    
    notebooks/single_cell_example
    notebooks/spatial_example
+   notebooks/bulk_example
