@@ -51,7 +51,7 @@ def explain_clustermap(
     df = ucdutils.read_results(
         adata = adata, 
         key = key,
-        n_top_genes = n_top_genes)
+        explain_n_top_genes = n_top_genes)
     
     # Groupby celltype
     df = df.groupby('celltype').mean()
