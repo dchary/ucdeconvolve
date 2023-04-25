@@ -122,7 +122,7 @@ def deconvolve_explain(
 
                 # Ensure scaled data is not provided
                 assert adata_mixture.X.min() >= 0, "Detected expression < 0, make sure counts are provided"
-
+                
                 # Standardize gene names
                 adata_mixture.var_names = ucdutils.match_to_gene(adata_mixture.var_names.tolist())
 
@@ -133,7 +133,7 @@ def deconvolve_explain(
                 # Format inputs for streaming to UCD API
                 adata_mixture = ucdutils.get_preprocessed_anndata(adata_mixture, desc = "Dataset", 
                                                                   progress = verbosity <= logging.INFO)
-
+            
                 # Package both objects into mudata object
                 mdata = mudata.MuData({"mixture" : adata_mixture})
 
@@ -166,13 +166,14 @@ def deconvolve_explain(
                     params['method'] = 'explain'
                     
                     # We attach results to the potentially subset mixture file first
-                    # We need to attach to both the original and the internal one
-                    adata_mixture_orig = ucdapiutils.download_and_attach_results(
+                    # This behavior isn't consistent in this method between functions
+                    # and needs to be updated
+                    explanations = ucdapiutils.download_and_attach_results(
                             adata_mixture_orig, results['download_url'], metadata['runtype'],
                             key_added, params)
 
                     # Get explanations from mixture object
-                    explanations = adata_mixture_orig.obsm[key_added]
+                    #explanations = adata_mixture_orig.obsm[key_added]
 
                     # Convert to coo
                     explanations = explanations.tocoo()
@@ -193,13 +194,13 @@ def deconvolve_explain(
                     adata_mixture_orig.obsm[key_added] = explanations
                     adata_mixture_orig.obs[f"{key_added}_mask"] = \
                         np.isin(np.arange(len(adata_mixture_orig)), reindexes)
-
+        
                     # Create dictionary mapping numerical indexes to celltypes
                     num_to_celltype = dict(enumerate(ucdmetadata['celltypes_all']))
 
                     # Convert explain index to celltype names
                     celltypenames = adata_mixture.obs["explain_idx"].map(
-                            num_to_celltype).values
+                            num_to_celltype).values.astype(str)
 
                     # Include target celltype, ensure length of the string array
                     # is length of longest value in celltypenames

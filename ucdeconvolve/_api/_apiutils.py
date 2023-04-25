@@ -307,10 +307,14 @@ def download_and_attach_results(
             # Load explanations file as sparse CSR matrix
             explanations = _read_csr_matrix_from_h5(temp_file.name)
             
-            adata.obsm[key_added] = explanations
+            # Don't attach here, return directly?
+            #adata.obsm[key_added] = explanations
             
             # attach runinfo
             adata.uns[key_added] = dict(runinfo=additional_runinfo)
+            
+            # We need to fix this later
+            return explanations
             
     # return anndata
     return adata
