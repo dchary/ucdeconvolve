@@ -24,13 +24,26 @@ def explain_clustermap(
     ) -> Optional[plt.Axes]:
     """\
     
-    Plot UCDeconvolveEXPLAIN Reuslts Clustermap
+    Plot Explanation Results as Clustermap
+    
+    Plot Clustered heatmap of top feature attribution predictions
+    grouped by the celltypes passed to the ``ucd.tl.explain`` function.
     
     Params
     -------
-    
+    adata
+        The annotated dataset with deconvolution data
+    key
+        Key for deconvolution results, default is 'ucdexplain'
+    n_top_genes
+        Number of top feature attributes (genes) per celltype
+    kwargs
+        Keyword attributes for clustermap. See
+        seaborn.clustermap for details.
+
     Returns
     -------
+    A clustermap
     
     """
     
@@ -65,7 +78,7 @@ def explain_boxplot(
     ) -> Optional[plt.Axes]:
     """\
     
-    Plot UCDeconvolveEXPLAIN Results Boxplot
+    Plot Boxplots of Feature Attributions By Gene
     
     Params
     -------

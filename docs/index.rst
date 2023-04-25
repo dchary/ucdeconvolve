@@ -27,8 +27,7 @@ UniCell Deconvolve (UCD) is a pre-trained deep learning model that provides cont
    :hidden:
    :caption: Getting Started
    
-   installation
-   notebooks/registration
+   notebooks/getting_started
 
 .. toctree::
    :maxdepth: 5
@@ -43,5 +42,7 @@ UniCell Deconvolve (UCD) is a pre-trained deep learning model that provides cont
    :hidden:
    :caption: About
 
+   release-notes/index
    method
+
    
