@@ -77,7 +77,7 @@ def deconvolve_explain(
         Results appended to anndata object if return_results or if original input was dataframe.
     
     """
-    
+
     # Get verbosity
     verbosity = verbosity if verbosity else settings.verbosity
     
@@ -111,7 +111,7 @@ def deconvolve_explain(
                 
                 # Drop all obs data from mixture
                 columns_to_drop = list(set(adata_mixture.obs.columns) - (set([groupby]) if groupby else set()))
-                adata_mixture.obs = adata_mixture.obs.drop(columns = adata_mixture.obs.columns)
+                adata_mixture.obs = adata_mixture.obs.drop(columns = columns_to_drop)
 
                 # Build explanation index column "explain_idx"
                 adata_mixture = _build_celltypes_index(adata_mixture, 
