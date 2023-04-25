@@ -105,7 +105,7 @@ def spatial(
             cbar_ncols = math.ceil(len(color) / cbar_nrows)
             
             # Create a new figure / ax instance using rc params
-            fig = plt.figure(constrained_layout=True)
+            fig = plt.figure(constrained_layout=False)
             
             gs = fig.add_gridspec(cbar_nrows, 1 + cbar_ncols, 
                 height_ratios = [1] * cbar_nrows, 
