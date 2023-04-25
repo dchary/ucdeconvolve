@@ -148,7 +148,7 @@ def explain_boxplot(
     # Create subplots
     fig, axes = plt.subplots(nrows = nrows, 
                              ncols = min(ncols, n_celltypes),
-                             figsize = figsize_full, dpi = dpi) if not ax else ax.get_figure(), ax
+                             figsize = figsize_full, dpi = dpi) if not ax else (ax.get_figure(), ax)
 
     # Flatten axes object
     axes = axes.flatten() if n_celltypes > 1 else [axes]
