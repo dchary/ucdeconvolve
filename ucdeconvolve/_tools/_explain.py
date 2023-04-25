@@ -58,18 +58,6 @@ def deconvolve_explain(
         expensive operation and most cells in a cluster will yield similar results.
     token
         UCDeconvolve API access token. If None, defaults to settings parameter.
-    split
-        Whether or not to split underlying data into
-        three categories, primary, cancer cell_line.
-        Helps with interpretability downstream, default
-        is True.  
-    sort
-        Sort columns of results by mean predictions. Default True.
-    propagate
-        Whether or not to perform belief propagation and
-        pass predictions up a cell-type heiarchy. helpful
-        in interpreting overall deconvolution results.
-        default is True.
     return_results
         Whether or not to return the predictions dict from the function,
         default to false as all data is written to anndata object either
@@ -122,7 +110,7 @@ def deconvolve_explain(
                 adata_mixture_orig = data
                 
                 # Drop all obs data from mixture
-                columns_to_drop = list(adata_mixture.obs.columns)
+                columns_to_drop = list(set(adata_mixture.obs.columns) - (set([groupby]) if groupby else set()))
                 adata_mixture.obs = adata_mixture.obs.drop(columns = adata_mixture.obs.columns)
 
                 # Build explanation index column "explain_idx"
