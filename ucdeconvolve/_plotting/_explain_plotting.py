@@ -18,7 +18,7 @@ from .. import _utils as ucdutils
 
 def explain_clustermap(
     adata : anndata.AnnData,
-    key : str = "ucdexplain",
+    key : Union[str, List[str]] = "ucdexplain",
     n_top_genes : int = 64,
     **kwargs
     ) -> Optional[plt.Axes]:
@@ -34,7 +34,7 @@ def explain_clustermap(
     adata
         The annotated dataset with deconvolution data
     key
-        Key for deconvolution results, default is 'ucdexplain'
+        Key for deconvolution results, default is 'ucdexplain'.
     n_top_genes
         Number of top feature attributes (genes) per celltype
     kwargs
@@ -46,13 +46,11 @@ def explain_clustermap(
     A clustermap
     
     """
-    
+
     # First read results out
-    df = ucdutils.read_results(
-        adata = adata, 
-        key = key,
+    df = ucdutils.read_results(adata = adata, key = key,
         explain_n_top_genes = n_top_genes)
-    
+        
     # Groupby celltype
     df = df.groupby('celltype').mean()
     
@@ -74,6 +72,7 @@ def explain_boxplot(
     dpi : int = 150,
     titlewidth : int = 24,
     barcolor : str = "lightblue",
+    ax : Optional[plt.Axes] = None,
     return_fig : bool = False
     ) -> Optional[plt.Axes]:
     """\
@@ -102,6 +101,8 @@ def explain_boxplot(
         Width of subplot title before newline
     barcolor
         Color of bars
+    ax
+        Optional axes to plot on.
     return_fig
         Return figure or not
         
@@ -147,7 +148,7 @@ def explain_boxplot(
     # Create subplots
     fig, axes = plt.subplots(nrows = nrows, 
                              ncols = min(ncols, n_celltypes),
-                             figsize = figsize_full, dpi = dpi)
+                             figsize = figsize_full, dpi = dpi) if not ax else ax.get_figure(), ax
 
     # Flatten axes object
     axes = axes.flatten() if n_celltypes > 1 else [axes]
