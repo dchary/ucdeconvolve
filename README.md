@@ -40,10 +40,24 @@ The UCD package offers the ability to directly integrate UCD predictions into an
 Includes preprocessing and visualization capabilities. Designed to interface with the annotated dataset and scanpy workflows.
 
 ## Installation
-UniCell Deconvolve can be installed from pyPI:
+
+### Conda (Recommended)
+We recommend installing ucdeconvolve in a virtual environment using tools such as conda or miniconda. We suggest the following installation:
+
+```bash
+conda create -n ucdenv python=3.8 pytables jupyter jupyterlab
+conda activate ucdenv
+pip install ucdeconvolve
+```
+
+### PIP
+UniCell Deconvolve can be installed from pyPI into an existing python workspace. The *pytables* package is required and may need to be installed separately using a package manage such as conda before installing ucdeconvolve. For detailed installation instruction see documentation. 
+
 ```bash
 pip install ucdeconvolve
 ```
+
+
 
 ## Documentation
 <p align="justify">
@@ -59,14 +73,50 @@ Full documentation with supporting tutorials is available <a href="https://ucdec
 To demonstrate the functionality of UCD, we will perform a cell type deconvolution of a spatial gene expression section of the <a href="https://www.10xgenomics.com/resources/datasets/human-lymph-node-1-standard-1-0-0">human lymph node</a>, made available by 10X Genomics. We will utilize scanpy to quickly load the dataset, and then pass it into ucdeconvolve to obtain cell type predictions.
 </p>
 
-### 1. Begin by loading required packages
+### 1. Create a New Account
+
+#### Register
+<p align="justify">
+Load the ucdeconvolve package and run the "ucd.api.register()" command as shown below.
+Follow the instructions by inputting the required information at each step.
+</p>
+
+```python
+ucd.api.register()
+```
+
+#### Activate
+<p align="justify">
+Upon completion of the initial registration form, you will recieve an email at
+the address specified with an activation code. Copy the code and paste it back
+into the waiting input prompt in order to activate your account or paste the
+activation code into the function "ucd.api.activate(code)"
+</p>
+
+```python
+ucd.api.activate(code)
+```
+
+#### Authenticate
+<p align="justify">
+Upon completion of activation, you will recieve an emial with your user acess 
+token. This token will be automatically appended to your current python instance
+if you are running ucd.api.register, otherwise you can always authenticate a new
+python instance with a valid api token using the function "ucd.api.authenticate"
+</p>
+
+```python
+ucd.api.authenticate(token)
+```
+
+### 2. Load Required Packages
 
 ```python
 import ucdeconvolve as ucd
 import scanpy as sc
-import logging
 ```
-### 2. Load the human lymph node dataset
+
+### 3. Load the human lymph node dataset
 
 ```python
 adata = sc.datasets.visium_sge("V1_Human_Lymph_Node")
@@ -78,46 +128,37 @@ AnnData object with n_obs × n_vars = 4035 × 36601
     uns: 'spatial'
     obsm: 'spatial'
 ```
-### 3. Obtain cell type fraction predictions
-<p align="justify">
-Replace <i>API_KEY</i> with your personal API key. As data is sent for predictions in batches, you can enable a progressbar to show the status of your prediction request. To enable more information about your run, verbosity can be increased using the python logging flag <em>logging.DEBUG</em> which will output the status of each stage of the prediction pipeline as well as post-run metrics. By default logging levels are set to <em>logging.WARNING</em> so leaving this parameter out will result in the function only showing a progressbar.
-</p>
+### 4. Run UCDBase to predict cell type fractions
 
 ```python
-ucd.tl.deconvolve(adata, API_KEY, showprogress = True, verbosity = logging.DEBUG)
+ucd.tl.base(adata)
 ```
 Example Console Output:
 
 ```
-2022-08-04 20:53:14,436|[UCD]|INFO: Starting UniCell Deconvolve Run.
-2022-08-04 20:53:14,622|[UCD]|DEBUG: Using batchsize: 256 on dataset of shape: (4035, 36601)
-2022-08-04 20:53:14,625|[UCD]|DEBUG: Data will be sent in 16 packet(s), each split into 4 sub-buffers of ~64 samples.
-2022-08-04 20:53:14,629|[UCD]|DEBUG: Data pipeline ready.
-2022-08-04 20:53:14,634|[UCD]|INFO: Initiating data stream for prediction.
-100% (15 of 15) |########################| Elapsed Time: 0:00:36 Time:  0:00:36
-2022-08-04 20:54:16,370|[UCD]|INFO: Data streaming complete.
-2022-08-04 20:54:16,372|[UCD]|DEBUG: Streaming time: 61.734 (sec)
-2022-08-04 20:54:16,374|[UCD]|DEBUG: Streaming rate: 65.361 (samples / sec)
-2022-08-04 20:54:16,379|[UCD]|INFO: Postprocessing predictions.
-2022-08-04 20:54:16,429|[UCD]|DEBUG: Splitting predictions.
-2022-08-04 20:54:16,673|[UCD]|DEBUG: Running belief propagation on predictions.
-2022-08-04 20:54:20,085|[UCD]|DEBUG: Running belief propagation on predictions.
-2022-08-04 20:54:21,131|[UCD]|DEBUG: Running belief propagation on predictions.
-2022-08-04 20:54:23,387|[UCD]|INFO: Writing results to anndata object.
-2022-08-04 20:54:23,390|[UCD]|INFO: UniCell Deconvolve Run Complete.
+2023-04-25 16:27:40,012|[UCD]|INFO: Starting UCDeconvolveBASE Run. | Timer Started.
+Preprocessing Dataset | 100% (16 of 16) || Elapsed Time: 0:00:02 Time:  0:00:02
+2023-04-25 16:27:43,509|[UCD]|INFO: Uploading Data | Timer Started.
+2023-04-25 16:27:49,367|[UCD]|INFO: Upload Complete | Elapsed Time: 5.857 (s)
+Waiting For Submission : UNKNOWN | Queue Size : 0 | \ |#| 2 Elapsed Time: 0:00:03
+Waiting For Completion | 100% (4035 of 4035) || Elapsed Time: 0:00:45 Time:  0:00:45
+2023-04-25 16:28:42,073|[UCD]|INFO: Download Results | Timer Started.
+2023-04-25 16:28:42,817|[UCD]|INFO: Download Complete | Elapsed Time: 0.743 (s)
+2023-04-25 16:28:43,466|[UCD]|INFO: Run Complete | Elapsed Time: 63.453 (s)
 ```
+
 ### 5. Reading and Visualizing Results
 
 <p align="justify">
-We can print our adata object to see what new information has been added to it. UCD appends the results of each deconvolution run into <i>'adata.obsm'</i> along with column names (i.e. celltypes) and run information into <i>'adata.uns'</i> under the default results stem <i>'ucd_results'</i>. Depending on whether or not the <i>split</i> parameter was set to True or False, you will either see a single new entry into <i>'adata.obsm'</i> or three entries. By default, <i>split = True</i> so predictions will be split into primary (non-malignat), cell lines, and primary cancer (malignant).
+We can print our adata object to see what new information has been added to it. UCD appends the results of each deconvolution run into <i>'adata.obsm'</i> along with column names (i.e. celltypes) and run information into <i>'adata.uns'</i> under the default results stem <i>'ucdbase'</i>. Depending on whether or not the <i>split</i> parameter was set to True or False, you will either see a single new entry into <i>'adata.obsm'</i> or three entries. By default, <i>split = True</i> so predictions will be split into primary (non-malignat), cell lines, and primary cancer (malignant).
 </p>
 
 ```
 AnnData object with n_obs × n_vars = 4035 × 36601
     obs: 'in_tissue', 'array_row', 'array_col'
     var: 'gene_ids', 'feature_types', 'genome'
-    uns: 'spatial', 'ucd_results'
-    obsm: 'spatial', 'ucd_results_cancer', 'ucd_results_lines', 'ucd_results_primary'
+    uns: 'spatial', 'ucdbase'
+    obsm: 'spatial', 'ucdbase_cancer', 'ucdbase_lines', 'ucdbase_primary', 'ucdbase_raw'
 ```
 
 <p align="justify">
@@ -125,7 +166,7 @@ We can visualize our results by using one of the built-in plotting functions in 
 </p>
 
 ```python
-ucd.pl.deconvolve(adata, basis = "spatial", color = "germinal center b cell")
+ucd.pl.spatial(adata, color = "germinal center b cell")
 ```
 
 <div align="center">
