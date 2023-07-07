@@ -112,7 +112,7 @@ def register(
         return apiutils.process_response(response)
     else:
         # Tell user to go check email
-        print(f"Please check inbox at dmcharytonowicz@gmail.com and copy/paste activation code into prompt below.")
+        print(f"Please check inbox at {params['email']} and copy/paste activation code into prompt below.")
         
         # If we are dynamic, we can wait for user prompt to get the activation code
         activation_code = getpass("Activation Code: ")
